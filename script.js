@@ -1,173 +1,105 @@
-const canvas = document.getElementById("game-canvas");
-const ctx = canvas.getContext("2d");
-canvas.width = canvas.clientWidth;
-canvas.height = canvas.clientHeight;
+const balanceEl = document.getElementById('balance');
+const betInput = document.getElementById('betInput');
+const startBtn = document.getElementById('startBtn');
+const multiplierEl = document.getElementById('multiplier');
+const messageEl = document.getElementById('message');
+const sound = document.getElementById('multiplierSound');
 
-const multiplierDisplay = document.getElementById("multiplier");
-const balanceDisplay = document.getElementById("balance");
-const gameStatus = document.getElementById("game-status");
-
-const betInput = document.getElementById("bet-input");
-const startButton = document.getElementById("start-button");
-const cashoutButton = document.getElementById("cashout-button");
-
-let balance = 100; // starting balance
-let bet = 0;
-let multiplier = 1;
-let crashed = false;
+let balance = 10.0;
 let gameRunning = false;
-let crashPoint = 0;
-let animationId;
 
-// For animation scaling pulse
-let scale = 1;
-let pulseDirection = 1;
-
-// Audio context for beep sounds
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-const audioCtx = new AudioContext();
-
-function playBeep(freq = 440, duration = 150, volume = 0.1) {
-  const oscillator = audioCtx.createOscillator();
-  const gainNode = audioCtx.createGain();
-  oscillator.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
-
-  oscillator.type = "square";
-  oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
-  gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
-
-  oscillator.start();
-
-  oscillator.stop(audioCtx.currentTime + duration / 1000);
+function setMessage(text, type = '') {
+  messageEl.textContent = text;
+  messageEl.className = 'message'; // reset
+  if (type) messageEl.classList.add(type);
 }
 
-function playCrashSound() {
-  playBeep(150, 300, 0.2);
+function playSound() {
+  sound.currentTime = 0;
+  sound.play();
 }
 
-function playCashoutSound() {
-  playBeep(600, 120, 0.15);
-  setTimeout(() => playBeep(800, 120, 0.15), 150);
+function formatMult(n) {
+  return n.toFixed(2) + 'x';
 }
 
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+startBtn.addEventListener('click', () => {
+  if (gameRunning) return;
 
-  ctx.fillStyle = crashed ? "red" : "#0f0";
-  ctx.font = `bold ${70 * scale}px Arial`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(multiplier.toFixed(2) + "x", canvas.width / 2, canvas.height / 2);
-}
-
-function getRandomCrashPoint() {
-  let r = Math.random();
-  return Math.max(1.2, 1 / (1 - r));
-}
-
-function startGame() {
-  bet = parseFloat(betInput.value);
-
-  if (isNaN(bet) || bet < 3) {
-    gameStatus.textContent = "Minimum bet is 3 TON. Please add more balance.";
+  const bet = parseFloat(betInput.value);
+  if (isNaN(bet)) {
+    setMessage('Please enter a valid bet amount.', 'error');
     return;
   }
-
+  if (bet < 3) {
+    setMessage('Minimum bet is 3 TON.', 'error');
+    return;
+  }
   if (bet > balance) {
-    gameStatus.textContent = "Insufficient balance.";
+    setMessage('Insufficient balance! Please add more TON.', 'error');
     return;
   }
 
-  if (audioCtx.state === "suspended") {
-    audioCtx.resume();
-  }
-
-  multiplier = 1;
-  crashed = false;
+  // Start game
+  setMessage('');
   gameRunning = true;
-  crashPoint = getRandomCrashPoint();
+  startBtn.disabled = true;
+  betInput.disabled = true;
 
   balance -= bet;
-  updateBalance();
+  balanceEl.textContent = balance.toFixed(2);
 
-  gameStatus.textContent = "Game started! Good luck!";
-  startButton.disabled = true;
-  betInput.disabled = true;
-  cashoutButton.disabled = false;
-  multiplierDisplay.classList.remove("crashed");
+  let multiplier = 1.0;
+  multiplierEl.textContent = formatMult(multiplier);
+  multiplierEl.style.color = '#0ff';
 
-  scale = 1;
-  pulseDirection = 1;
+  // Play sound every 300ms during multiplier increase
+  const soundInterval = setInterval(playSound, 300);
 
-  animate();
-}
+  // Increase multiplier every 100ms randomly
+  const multiplierInterval = setInterval(() => {
+    multiplier += Math.random() * 0.1 + 0.01; // smoother growth
+    multiplierEl.textContent = formatMult(multiplier);
 
-function animate() {
-  if (!gameRunning) return;
+    // Change multiplier color glow based on multiplier value
+    if (multiplier < 2) {
+      multiplierEl.style.color = '#0ff';
+      multiplierEl.style.textShadow =
+        '0 0 15px #0ff, 0 0 30px #0ff, 0 0 45px #0ff';
+    } else if (multiplier < 4) {
+      multiplierEl.style.color = '#ff0';
+      multiplierEl.style.textShadow =
+        '0 0 15px #ff0, 0 0 30px #ff0, 0 0 45px #ff0';
+    } else {
+      multiplierEl.style.color = '#f80';
+      multiplierEl.style.textShadow =
+        '0 0 15px #f80, 0 0 30px #f80, 0 0 45px #f80';
+    }
+  }, 100);
 
-  multiplier *= 1.007;
+  // Random crash time between 3 and 8 seconds
+  const crashTime = 3000 + Math.random() * 5000;
 
-  scale += pulseDirection * 0.007;
-  if (scale >= 1.1) pulseDirection = -1;
-  if (scale <= 1) pulseDirection = 1;
+  setTimeout(() => {
+    clearInterval(multiplierInterval);
+    clearInterval(soundInterval);
 
-  if (multiplier >= crashPoint) {
-    crashed = true;
+    // The final multiplier at crash
+    const crashMultiplier = multiplier;
+
+    multiplierEl.textContent = formatMult(crashMultiplier) + ' (CRASH!)';
+
+    // User loses bet (already deducted)
+
+    setMessage(
+      `Crash at ${formatMult(crashMultiplier)}. You lost your bet of ${bet.toFixed(
+        2
+      )} TON.`,
+      'error'
+    );
+
     gameRunning = false;
-    multiplier = crashPoint;
-
-    multiplierDisplay.classList.add("crashed");
-    multiplierDisplay.style.transform = "scale(1)";
-
-    gameStatus.textContent = `Crashed at ${multiplier.toFixed(2)}x! You lost your bet.`;
-    playCrashSound();
-
-    cashoutButton.disabled = true;
-    startButton.disabled = false;
+    startBtn.disabled = false;
     betInput.disabled = false;
-    multiplierDisplay.textContent = multiplier.toFixed(2) + "x";
-    draw();
-    return;
-  }
-
-  multiplierDisplay.textContent = multiplier.toFixed(2) + "x";
-  multiplierDisplay.style.transform = `scale(${scale.toFixed(2)})`;
-
-  draw();
-
-  animationId = requestAnimationFrame(animate);
-}
-
-function cashOut() {
-  if (!gameRunning || crashed) return;
-
-  gameRunning = false;
-  cancelAnimationFrame(animationId);
-
-  const winnings = bet * multiplier;
-  balance += winnings;
-
-  updateBalance();
-
-  gameStatus.textContent = `You cashed out at ${multiplier.toFixed(2)}x! Winnings: ${winnings.toFixed(2)} TON`;
-  playCashoutSound();
-
-  cashoutButton.disabled = true;
-  startButton.disabled = false;
-  betInput.disabled = false;
-
-  multiplierDisplay.classList.remove("crashed");
-  multiplierDisplay.style.transform = "scale(1)";
-}
-
-function updateBalance() {
-  balanceDisplay.textContent = `Balance: ${balance.toFixed(2)} TON`;
-}
-
-startButton.addEventListener("click", startGame);
-cashoutButton.addEventListener("click", cashOut);
-
-updateBalance();
-multiplierDisplay.textContent = "1.00x";
-draw();
+  }, crashTime);
+});
