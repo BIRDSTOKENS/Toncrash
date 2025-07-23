@@ -1,105 +1,69 @@
 const balanceEl = document.getElementById('balance');
 const betInput = document.getElementById('betInput');
-const startBtn = document.getElementById('startBtn');
+const playBtn = document.getElementById('playBtn');
 const multiplierEl = document.getElementById('multiplier');
 const messageEl = document.getElementById('message');
-const sound = document.getElementById('multiplierSound');
+const spinSound = document.getElementById('spinSound');
 
-let balance = 10.0;
-let gameRunning = false;
+let balance = 1000;
 
-function setMessage(text, type = '') {
-  messageEl.textContent = text;
-  messageEl.className = 'message'; // reset
-  if (type) messageEl.classList.add(type);
+function updateBalance() {
+  balanceEl.textContent = balance.toFixed(2);
 }
 
-function playSound() {
-  sound.currentTime = 0;
-  sound.play();
+function showMessage(msg) {
+  messageEl.textContent = msg;
+  setTimeout(() => {
+    messageEl.textContent = '';
+  }, 3000);
 }
 
-function formatMult(n) {
-  return n.toFixed(2) + 'x';
-}
-
-startBtn.addEventListener('click', () => {
-  if (gameRunning) return;
-
-  const bet = parseFloat(betInput.value);
-  if (isNaN(bet)) {
-    setMessage('Please enter a valid bet amount.', 'error');
-    return;
-  }
-  if (bet < 3) {
-    setMessage('Minimum bet is 3 TON.', 'error');
+function playGame() {
+  let bet = parseFloat(betInput.value);
+  if (isNaN(bet) || bet < 3) {
+    showMessage('Please enter a bet of at least 3 TON!');
     return;
   }
   if (bet > balance) {
-    setMessage('Insufficient balance! Please add more TON.', 'error');
+    showMessage('Not enough balance! Add more funds.');
     return;
   }
 
-  // Start game
-  setMessage('');
-  gameRunning = true;
-  startBtn.disabled = true;
-  betInput.disabled = true;
-
   balance -= bet;
-  balanceEl.textContent = balance.toFixed(2);
+  updateBalance();
 
-  let multiplier = 1.0;
-  multiplierEl.textContent = formatMult(multiplier);
-  multiplierEl.style.color = '#0ff';
+  // Play spin sound
+  spinSound.currentTime = 0;
+  spinSound.play();
 
-  // Play sound every 300ms during multiplier increase
-  const soundInterval = setInterval(playSound, 300);
+  // Animate multiplier from 1.00x to random between 1.0 and 5.0
+  let start = 1.00;
+  let end = (Math.random() * 4 + 1).toFixed(2);
+  let duration = 3000; // 3 seconds
+  let frameRate = 30;
+  let totalFrames = (duration / 1000) * frameRate;
+  let frame = 0;
 
-  // Increase multiplier every 100ms randomly
-  const multiplierInterval = setInterval(() => {
-    multiplier += Math.random() * 0.1 + 0.01; // smoother growth
-    multiplierEl.textContent = formatMult(multiplier);
+  let animation = setInterval(() => {
+    frame++;
+    let progress = frame / totalFrames;
+    let currentMultiplier = (start + (end - start) * progress).toFixed(2);
+    multiplierEl.textContent = currentMultiplier + 'x';
 
-    // Change multiplier color glow based on multiplier value
-    if (multiplier < 2) {
-      multiplierEl.style.color = '#0ff';
-      multiplierEl.style.textShadow =
-        '0 0 15px #0ff, 0 0 30px #0ff, 0 0 45px #0ff';
-    } else if (multiplier < 4) {
-      multiplierEl.style.color = '#ff0';
-      multiplierEl.style.textShadow =
-        '0 0 15px #ff0, 0 0 30px #ff0, 0 0 45px #ff0';
-    } else {
-      multiplierEl.style.color = '#f80';
-      multiplierEl.style.textShadow =
-        '0 0 15px #f80, 0 0 30px #f80, 0 0 45px #f80';
+    if (frame >= totalFrames) {
+      clearInterval(animation);
+
+      let multiplierNum = parseFloat(end);
+      let winnings = bet * multiplierNum;
+
+      balance += winnings;
+      updateBalance();
+
+      showMessage(`You won ${winnings.toFixed(2)} TON!`);
     }
-  }, 100);
+  }, 1000 / frameRate);
+}
 
-  // Random crash time between 3 and 8 seconds
-  const crashTime = 3000 + Math.random() * 5000;
+playBtn.addEventListener('click', playGame);
 
-  setTimeout(() => {
-    clearInterval(multiplierInterval);
-    clearInterval(soundInterval);
-
-    // The final multiplier at crash
-    const crashMultiplier = multiplier;
-
-    multiplierEl.textContent = formatMult(crashMultiplier) + ' (CRASH!)';
-
-    // User loses bet (already deducted)
-
-    setMessage(
-      `Crash at ${formatMult(crashMultiplier)}. You lost your bet of ${bet.toFixed(
-        2
-      )} TON.`,
-      'error'
-    );
-
-    gameRunning = false;
-    startBtn.disabled = false;
-    betInput.disabled = false;
-  }, crashTime);
-});
+updateBalance();
