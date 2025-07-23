@@ -1,41 +1,59 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TON Multiplier Game</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Simple Multiplier Game</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 40px;
+    background: #222;
+    color: #eee;
+  }
+  #game {
+    margin-top: 30px;
+  }
+  input[type="number"] {
+    padding: 8px;
+    font-size: 18px;
+    width: 120px;
+  }
+  button {
+    padding: 10px 15px;
+    font-size: 18px;
+    margin-left: 10px;
+    cursor: pointer;
+  }
+  #multiplier {
+    font-size: 72px;
+    margin: 40px 0;
+    height: 100px;
+    line-height: 100px;
+    font-weight: bold;
+    color: #0f0;
+    text-shadow: 0 0 10px #0f0;
+  }
+  #message {
+    color: #f33;
+    height: 30px;
+    margin-bottom: 20px;
+  }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>TON Multiplier Game</h1>
-
-    <div class="balance-container">
-      Balance: <span id="balance">10.00</span> TON
-    </div>
-
-    <div class="bet-container">
-      <label for="betInput">Your Bet (min 3 TON):</label>
-      <input
-        id="betInput"
-        type="number"
-        min="3"
-        step="0.01"
-        placeholder="3 TON or more"
-        autocomplete="off"
-      />
-      <button id="startBtn">Start Game</button>
-    </div>
-
-    <div class="multiplier-container">
-      <span id="multiplier">1.00x</span>
-    </div>
-
-    <div id="message" class="message"></div>
+  <h1>Simple Multiplier Game</h1>
+  <div>Balance: <span id="balance">1000</span> TON</div>
+  <div id="game">
+    <input id="betInput" type="number" min="1" placeholder="Enter your bet (≥3 TON)" />
+    <button id="playBtn">Play</button>
+    <div id="message"></div>
+    <div id="multiplier">1.00x</div>
   </div>
 
-  <audio id="multiplierSound" src="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg" preload="auto"></audio>
+  <audio id="spinSound" src="https://freesound.org/data/previews/466/466748_10285172-lq.mp3"></audio>
 
-  <script src="script.js"></script>
+<script src="game.js"></script>
 </body>
 </html>
