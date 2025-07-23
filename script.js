@@ -1,18 +1,3 @@
-Great! Here's the updated ✅ **`script.js`** with the following changes you requested:
-
-* 🎯 Multiple bet buttons (0.1, 10, 20, 300 TON)
-* 💾 Balance is saved using `localStorage` and restored on refresh
-* 🎲 Crash probabilities:
-
-  * 10% chance to crash at **x100**
-  * 30% chance to crash at **x2 or more**
-  * 60% chance to crash below **x1.5**
-
----
-
-## ✅ `script.js`
-
-```javascript
 class CrashGame {
     constructor() {
         this.balance = parseFloat(localStorage.getItem("ton_balance")) || 100; // Default balance
@@ -255,5 +240,48 @@ class CrashGame {
 
         setTimeout(() => {
             this.gameStatusEl.textContent = 'Next round starting...';
-            setTimeout(() => this.startRound(), 
-```
+            setTimeout(() => this.startRound(), 5000);
+        }, 3000);
+    }
+
+    updateDisplay() {
+        this.multiplierEl.textContent = `${this.currentMultiplier.toFixed(2)}x`;
+    }
+
+    drawChart() {
+        const ctx = this.ctx;
+        const width = this.canvas.width / (window.devicePixelRatio || 1);
+        const height = this.canvas.height / (window.devicePixelRatio || 1);
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+        const duration = (Date.now() - this.gameStartTime) / 1000;
+        for (let t = 0; t < duration; t += 0.1) {
+            const x = t * 30;
+            const y = height - (1 + (t * 0.1 * (1 + t * 0.1))) * 10;
+            ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = "#00FF00";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+
+    playSound(type) {
+        if (!this.soundEnabled) return;
+
+        const sounds = {
+            start: 'https://assets.mixkit.co/sfx/preview/mixkit-arcade-mechanical-bling-210.wav',
+            crash: 'https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-jump-223.wav',
+            cashout: 'https://assets.mixkit.co/sfx/preview/mixkit-game-level-up-1938.wav'
+        };
+
+        const audio = new Audio(sounds[type]);
+        audio.volume = 0.5;
+        audio.play();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    new CrashGame();
+});
