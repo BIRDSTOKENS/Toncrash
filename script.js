@@ -1,6 +1,21 @@
+Great! Here's the updated ✅ **`script.js`** with the following changes you requested:
+
+* 🎯 Multiple bet buttons (0.1, 10, 20, 300 TON)
+* 💾 Balance is saved using `localStorage` and restored on refresh
+* 🎲 Crash probabilities:
+
+  * 10% chance to crash at **x100**
+  * 30% chance to crash at **x2 or more**
+  * 60% chance to crash below **x1.5**
+
+---
+
+## ✅ `script.js`
+
+```javascript
 class CrashGame {
     constructor() {
-        this.balance = parseFloat(localStorage.getItem('balance')) || 100;
+        this.balance = parseFloat(localStorage.getItem("ton_balance")) || 100; // Default balance
         this.currentMultiplier = 1.00;
         this.isGameRunning = false;
         this.isBetPlaced = false;
@@ -8,7 +23,7 @@ class CrashGame {
         this.gameStartTime = 0;
         this.animationId = null;
         this.soundEnabled = true;
-        this.betAmount = 0;
+        this.betAmount = 0.1;
 
         this.initializeElements();
         this.initializeEventListeners();
@@ -31,6 +46,7 @@ class CrashGame {
         this.crashHistory = document.getElementById('crash-history');
         this.canvas = document.getElementById('game-canvas');
         this.ctx = this.canvas.getContext('2d');
+        this.betButtons = document.querySelectorAll('.bet-btn');
 
         this.setupCanvas();
     }
@@ -46,10 +62,11 @@ class CrashGame {
     }
 
     initializeEventListeners() {
-        document.querySelectorAll('.bet-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const amount = parseFloat(btn.getAttribute('data-amount'));
-                this.placeBet(amount);
+        this.betButtons.forEach(button => {
+            button.disabled = false;
+            button.addEventListener('click', () => {
+                this.betAmount = parseFloat(button.dataset.amount);
+                this.placeBet();
             });
         });
 
@@ -75,6 +92,7 @@ class CrashGame {
             const randomIndex = Math.floor(Math.random() * users.length);
             const newId = Math.floor(100000 + Math.random() * 900000);
             users[randomIndex] = `🧑 ID_${newId}`;
+
             this.userList.innerHTML = users.map(user =>
                 `<div class="user-item">${user}</div>`
             ).join('');
@@ -95,40 +113,8 @@ class CrashGame {
             let className = 'low';
             if (crash >= 2 && crash < 5) className = 'medium';
             if (crash >= 5) className = 'high';
-
             return `<span class="crash-item ${className}">${crash}x</span>`;
         }).join('');
-    }
-
-    playSound(soundName) {
-        if (!this.soundEnabled) return;
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        switch (soundName) {
-            case 'start':
-                oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.1);
-                break;
-            case 'cashout':
-                oscillator.frequency.setValueAtTime(660, audioContext.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.2);
-                break;
-            case 'crash':
-                oscillator.frequency.setValueAtTime(220, audioContext.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(110, audioContext.currentTime + 0.3);
-                break;
-        }
-
-        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.3);
     }
 
     toggleSound() {
@@ -161,8 +147,8 @@ class CrashGame {
         alert('Withdrawal functionality is not available in demo mode');
     }
 
-    placeBet(amount) {
-        if (this.balance < amount) {
+    placeBet() {
+        if (this.balance < this.betAmount) {
             alert('Insufficient balance! Please deposit TON to play.');
             return;
         }
@@ -173,53 +159,41 @@ class CrashGame {
         }
 
         this.isBetPlaced = true;
-        this.betAmount = amount;
-        this.balance -= amount;
+        this.balance -= this.betAmount;
         this.updateBalance();
-        this.gameStatusEl.textContent = `Bet placed: ${amount} TON`;
+        this.disableAllBetButtons(true);
+        this.gameStatusEl.textContent = `Bet placed (${this.betAmount} TON)! Waiting for round...`;
     }
 
     cashOut() {
         if (!this.isBetPlaced || !this.isGameRunning) return;
-
         const winAmount = this.betAmount * this.currentMultiplier;
         this.balance += winAmount;
         this.updateBalance();
-
         this.isBetPlaced = false;
         this.cashoutButton.disabled = true;
         this.gameStatusEl.textContent = `Cashed out at ${this.currentMultiplier.toFixed(2)}x! Won ${winAmount.toFixed(2)} TON`;
         this.playSound('cashout');
+        this.disableAllBetButtons(false);
+    }
 
-        setTimeout(() => {
-            document.querySelectorAll('.bet-btn').forEach(btn => btn.disabled = false);
-        }, 1000);
+    disableAllBetButtons(state) {
+        this.betButtons.forEach(btn => btn.disabled = state);
     }
 
     updateBalance() {
         this.balanceEl.textContent = `Balance: ${this.balance.toFixed(2)} TON`;
-        localStorage.setItem('balance', this.balance.toFixed(2));
+        localStorage.setItem("ton_balance", this.balance.toFixed(2));
     }
 
     startGameLoop() {
-        setTimeout(() => {
-            this.startRound();
-        }, 7000);
+        setTimeout(() => this.startRound(), 5000);
     }
 
     startRound() {
         this.isGameRunning = true;
         this.currentMultiplier = 1.00;
-        const roll = Math.random();
-
-        if (roll < 0.1) {
-            this.crashPoint = 100;
-        } else if (roll < 0.4) {
-            this.crashPoint = 2 + Math.random() * 8;
-        } else {
-            this.crashPoint = 1 + Math.random() * 0.5;
-        }
-
+        this.crashPoint = this.getCrashPoint();
         this.gameStartTime = Date.now();
         this.gameStatusEl.textContent = 'Game is running!';
         this.multiplierEl.classList.remove('crashed');
@@ -228,63 +202,58 @@ class CrashGame {
             this.cashoutButton.disabled = false;
         }
 
-        document.querySelectorAll('.bet-btn').forEach(btn => btn.disabled = true);
         this.playSound('start');
-        this.animateGame();
+        this.runGame();
     }
 
-    animateGame() {
-        const duration = 20000;
-
-        const draw = () => {
-            const elapsed = (Date.now() - this.gameStartTime) / 1000;
-            this.currentMultiplier = 1 + Math.pow(elapsed, 2) / 10;
-            this.multiplierEl.textContent = `${this.currentMultiplier.toFixed(2)}x`;
-
-            const width = this.canvas.width / window.devicePixelRatio;
-            const height = this.canvas.height / window.devicePixelRatio;
-
-            this.ctx.clearRect(0, 0, width, height);
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, height);
-            this.ctx.lineTo(width, height - this.currentMultiplier * 10);
-            this.ctx.strokeStyle = '#0f0';
-            this.ctx.stroke();
-
-            if (this.currentMultiplier >= this.crashPoint) {
-                cancelAnimationFrame(this.animationId);
-                this.endRound();
-            } else {
-                this.animationId = requestAnimationFrame(draw);
-            }
-        };
-
-        this.animationId = requestAnimationFrame(draw);
+    getCrashPoint() {
+        const r = Math.random();
+        if (r < 0.10) return 100;      // 10% chance
+        if (r < 0.40) return 2 + Math.random() * 8; // 30% chance (2x to 10x)
+        return 1 + Math.random() * 0.49; // 60% chance (< 1.5x)
     }
 
-    endRound() {
+    runGame() {
+        const now = Date.now();
+        const elapsed = (now - this.gameStartTime) / 1000;
+        const baseSpeed = 0.1;
+        const accelerationFactor = 1 + (elapsed * 0.1);
+        this.currentMultiplier = 1 + (elapsed * baseSpeed * accelerationFactor);
+
+        if (this.currentMultiplier >= this.crashPoint) {
+            this.crash();
+            return;
+        }
+
+        this.updateDisplay();
+        this.drawChart();
+        this.animationId = requestAnimationFrame(() => this.runGame());
+    }
+
+    crash() {
         this.isGameRunning = false;
-        this.multiplierEl.textContent = `💥 ${this.crashPoint.toFixed(2)}x`;
+        this.currentMultiplier = this.crashPoint;
         this.multiplierEl.classList.add('crashed');
-        this.gameStatusEl.textContent = `Crashed at ${this.crashPoint.toFixed(2)}x`;
+        this.gameStatusEl.textContent = `💥 CRASHED at ${this.crashPoint.toFixed(2)}x`;
 
         if (this.isBetPlaced) {
             this.isBetPlaced = false;
-            this.cashoutButton.disabled = true;
-            this.playSound('crash');
+            this.gameStatusEl.textContent += ' — You lost your bet!';
         }
 
-        const prevHistory = Array.from(this.crashHistory.children).map(item => parseFloat(item.textContent));
-        prevHistory.unshift(this.crashPoint);
-        if (prevHistory.length > 10) prevHistory.pop();
-        this.updateCrashHistory(prevHistory);
+        this.cashoutButton.disabled = true;
+        this.disableAllBetButtons(false);
+        this.playSound('crash');
+        this.updateDisplay();
+        this.drawChart();
+
+        const historyItems = Array.from(this.crashHistory.children);
+        const crashes = historyItems.map(item => parseFloat(item.textContent.replace('x', '')));
+        crashes.unshift(this.crashPoint);
+        if (crashes.length > 10) crashes.pop();
+        this.updateCrashHistory(crashes);
 
         setTimeout(() => {
-            this.startGameLoop();
-        }, 7000);
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    new CrashGame();
-});
+            this.gameStatusEl.textContent = 'Next round starting...';
+            setTimeout(() => this.startRound(), 
+```
