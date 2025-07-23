@@ -1,287 +1,173 @@
-class CrashGame {
-    constructor() {
-        this.balance = parseFloat(localStorage.getItem("ton_balance")) || 100; // Default balance
-        this.currentMultiplier = 1.00;
-        this.isGameRunning = false;
-        this.isBetPlaced = false;
-        this.crashPoint = 0;
-        this.gameStartTime = 0;
-        this.animationId = null;
-        this.soundEnabled = true;
-        this.betAmount = 0.1;
+const canvas = document.getElementById("game-canvas");
+const ctx = canvas.getContext("2d");
+canvas.width = canvas.clientWidth;
+canvas.height = canvas.clientHeight;
 
-        this.initializeElements();
-        this.initializeEventListeners();
-        this.generateFakeUsers();
-        this.generateCrashHistory();
-        this.updateBalance();
-        this.startGameLoop();
-    }
+const multiplierDisplay = document.getElementById("multiplier");
+const balanceDisplay = document.getElementById("balance");
+const gameStatus = document.getElementById("game-status");
 
-    initializeElements() {
-        this.multiplierEl = document.getElementById('multiplier');
-        this.balanceEl = document.getElementById('balance');
-        this.cashoutButton = document.getElementById('cashout-button');
-        this.gameStatusEl = document.getElementById('game-status');
-        this.soundToggle = document.getElementById('sound-toggle');
-        this.copyWalletBtn = document.getElementById('copy-wallet');
-        this.withdrawBtn = document.getElementById('withdraw-button');
-        this.withdrawInput = document.getElementById('withdraw-input');
-        this.userList = document.getElementById('user-list');
-        this.crashHistory = document.getElementById('crash-history');
-        this.canvas = document.getElementById('game-canvas');
-        this.ctx = this.canvas.getContext('2d');
-        this.betButtons = document.querySelectorAll('.bet-btn');
+const betInput = document.getElementById("bet-input");
+const startButton = document.getElementById("start-button");
+const cashoutButton = document.getElementById("cashout-button");
 
-        this.setupCanvas();
-    }
+let balance = 100; // starting balance
+let bet = 0;
+let multiplier = 1;
+let crashed = false;
+let gameRunning = false;
+let crashPoint = 0;
+let animationId;
 
-    setupCanvas() {
-        const dpr = window.devicePixelRatio || 1;
-        const rect = this.canvas.getBoundingClientRect();
-        this.canvas.width = rect.width * dpr;
-        this.canvas.height = rect.height * dpr;
-        this.ctx.scale(dpr, dpr);
-        this.canvas.style.width = rect.width + 'px';
-        this.canvas.style.height = rect.height + 'px';
-    }
+// For animation scaling pulse
+let scale = 1;
+let pulseDirection = 1;
 
-    initializeEventListeners() {
-        this.betButtons.forEach(button => {
-            button.disabled = false;
-            button.addEventListener('click', () => {
-                this.betAmount = parseFloat(button.dataset.amount);
-                this.placeBet();
-            });
-        });
+// Audio context for beep sounds
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioContext();
 
-        this.cashoutButton.addEventListener('click', () => this.cashOut());
-        this.soundToggle.addEventListener('click', () => this.toggleSound());
-        this.copyWalletBtn.addEventListener('click', () => this.copyWallet());
-        this.withdrawBtn.addEventListener('click', () => this.withdraw());
-        window.addEventListener('resize', () => this.setupCanvas());
-    }
+function playBeep(freq = 440, duration = 150, volume = 0.1) {
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
 
-    generateFakeUsers() {
-        const users = [];
-        for (let i = 0; i < 20; i++) {
-            const id = Math.floor(100000 + Math.random() * 900000);
-            users.push(`🧑 ID_${id}`);
-        }
+  oscillator.type = "square";
+  oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
 
-        this.userList.innerHTML = users.map(user =>
-            `<div class="user-item">${user}</div>`
-        ).join('');
+  oscillator.start();
 
-        setInterval(() => {
-            const randomIndex = Math.floor(Math.random() * users.length);
-            const newId = Math.floor(100000 + Math.random() * 900000);
-            users[randomIndex] = `🧑 ID_${newId}`;
-
-            this.userList.innerHTML = users.map(user =>
-                `<div class="user-item">${user}</div>`
-            ).join('');
-        }, 5000);
-    }
-
-    generateCrashHistory() {
-        const history = [];
-        for (let i = 0; i < 10; i++) {
-            const crash = (1 + Math.random() * 9).toFixed(2);
-            history.push(parseFloat(crash));
-        }
-        this.updateCrashHistory(history);
-    }
-
-    updateCrashHistory(history) {
-        this.crashHistory.innerHTML = history.map(crash => {
-            let className = 'low';
-            if (crash >= 2 && crash < 5) className = 'medium';
-            if (crash >= 5) className = 'high';
-            return `<span class="crash-item ${className}">${crash}x</span>`;
-        }).join('');
-    }
-
-    toggleSound() {
-        this.soundEnabled = !this.soundEnabled;
-        this.soundToggle.textContent = this.soundEnabled ? '🔊' : '🔇';
-    }
-
-    copyWallet() {
-        const walletAddress = document.getElementById('wallet-address').textContent;
-        navigator.clipboard.writeText(walletAddress).then(() => {
-            this.copyWalletBtn.textContent = '✅ Copied!';
-            setTimeout(() => {
-                this.copyWalletBtn.textContent = '📋 Copy Wallet';
-            }, 2000);
-        });
-    }
-
-    withdraw() {
-        const address = this.withdrawInput.value.trim();
-        if (!address) {
-            alert('Please enter a valid TON wallet address');
-            return;
-        }
-
-        if (this.balance <= 0) {
-            alert('Insufficient balance for withdrawal');
-            return;
-        }
-
-        alert('Withdrawal functionality is not available in demo mode');
-    }
-
-    placeBet() {
-        if (this.balance < this.betAmount) {
-            alert('Insufficient balance! Please deposit TON to play.');
-            return;
-        }
-
-        if (this.isGameRunning) {
-            alert('Wait for the current round to finish');
-            return;
-        }
-
-        this.isBetPlaced = true;
-        this.balance -= this.betAmount;
-        this.updateBalance();
-        this.disableAllBetButtons(true);
-        this.gameStatusEl.textContent = `Bet placed (${this.betAmount} TON)! Waiting for round...`;
-    }
-
-    cashOut() {
-        if (!this.isBetPlaced || !this.isGameRunning) return;
-        const winAmount = this.betAmount * this.currentMultiplier;
-        this.balance += winAmount;
-        this.updateBalance();
-        this.isBetPlaced = false;
-        this.cashoutButton.disabled = true;
-        this.gameStatusEl.textContent = `Cashed out at ${this.currentMultiplier.toFixed(2)}x! Won ${winAmount.toFixed(2)} TON`;
-        this.playSound('cashout');
-        this.disableAllBetButtons(false);
-    }
-
-    disableAllBetButtons(state) {
-        this.betButtons.forEach(btn => btn.disabled = state);
-    }
-
-    updateBalance() {
-        this.balanceEl.textContent = `Balance: ${this.balance.toFixed(2)} TON`;
-        localStorage.setItem("ton_balance", this.balance.toFixed(2));
-    }
-
-    startGameLoop() {
-        setTimeout(() => this.startRound(), 5000);
-    }
-
-    startRound() {
-        this.isGameRunning = true;
-        this.currentMultiplier = 1.00;
-        this.crashPoint = this.getCrashPoint();
-        this.gameStartTime = Date.now();
-        this.gameStatusEl.textContent = 'Game is running!';
-        this.multiplierEl.classList.remove('crashed');
-
-        if (this.isBetPlaced) {
-            this.cashoutButton.disabled = false;
-        }
-
-        this.playSound('start');
-        this.runGame();
-    }
-
-    getCrashPoint() {
-        const r = Math.random();
-        if (r < 0.10) return 100;      // 10% chance
-        if (r < 0.40) return 2 + Math.random() * 8; // 30% chance (2x to 10x)
-        return 1 + Math.random() * 0.49; // 60% chance (< 1.5x)
-    }
-
-    runGame() {
-        const now = Date.now();
-        const elapsed = (now - this.gameStartTime) / 1000;
-        const baseSpeed = 0.1;
-        const accelerationFactor = 1 + (elapsed * 0.1);
-        this.currentMultiplier = 1 + (elapsed * baseSpeed * accelerationFactor);
-
-        if (this.currentMultiplier >= this.crashPoint) {
-            this.crash();
-            return;
-        }
-
-        this.updateDisplay();
-        this.drawChart();
-        this.animationId = requestAnimationFrame(() => this.runGame());
-    }
-
-    crash() {
-        this.isGameRunning = false;
-        this.currentMultiplier = this.crashPoint;
-        this.multiplierEl.classList.add('crashed');
-        this.gameStatusEl.textContent = `💥 CRASHED at ${this.crashPoint.toFixed(2)}x`;
-
-        if (this.isBetPlaced) {
-            this.isBetPlaced = false;
-            this.gameStatusEl.textContent += ' — You lost your bet!';
-        }
-
-        this.cashoutButton.disabled = true;
-        this.disableAllBetButtons(false);
-        this.playSound('crash');
-        this.updateDisplay();
-        this.drawChart();
-
-        const historyItems = Array.from(this.crashHistory.children);
-        const crashes = historyItems.map(item => parseFloat(item.textContent.replace('x', '')));
-        crashes.unshift(this.crashPoint);
-        if (crashes.length > 10) crashes.pop();
-        this.updateCrashHistory(crashes);
-
-        setTimeout(() => {
-            this.gameStatusEl.textContent = 'Next round starting...';
-            setTimeout(() => this.startRound(), 5000);
-        }, 3000);
-    }
-
-    updateDisplay() {
-        this.multiplierEl.textContent = `${this.currentMultiplier.toFixed(2)}x`;
-    }
-
-    drawChart() {
-        const ctx = this.ctx;
-        const width = this.canvas.width / (window.devicePixelRatio || 1);
-        const height = this.canvas.height / (window.devicePixelRatio || 1);
-
-        ctx.clearRect(0, 0, width, height);
-        ctx.beginPath();
-        ctx.moveTo(0, height);
-        const duration = (Date.now() - this.gameStartTime) / 1000;
-        for (let t = 0; t < duration; t += 0.1) {
-            const x = t * 30;
-            const y = height - (1 + (t * 0.1 * (1 + t * 0.1))) * 10;
-            ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = "#00FF00";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-    }
-
-    playSound(type) {
-        if (!this.soundEnabled) return;
-
-        const sounds = {
-            start: 'https://assets.mixkit.co/sfx/preview/mixkit-arcade-mechanical-bling-210.wav',
-            crash: 'https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-jump-223.wav',
-            cashout: 'https://assets.mixkit.co/sfx/preview/mixkit-game-level-up-1938.wav'
-        };
-
-        const audio = new Audio(sounds[type]);
-        audio.volume = 0.5;
-        audio.play();
-    }
+  oscillator.stop(audioCtx.currentTime + duration / 1000);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    new CrashGame();
-});
+function playCrashSound() {
+  playBeep(150, 300, 0.2);
+}
+
+function playCashoutSound() {
+  playBeep(600, 120, 0.15);
+  setTimeout(() => playBeep(800, 120, 0.15), 150);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = crashed ? "red" : "#0f0";
+  ctx.font = `bold ${70 * scale}px Arial`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(multiplier.toFixed(2) + "x", canvas.width / 2, canvas.height / 2);
+}
+
+function getRandomCrashPoint() {
+  let r = Math.random();
+  return Math.max(1.2, 1 / (1 - r));
+}
+
+function startGame() {
+  bet = parseFloat(betInput.value);
+
+  if (isNaN(bet) || bet < 3) {
+    gameStatus.textContent = "Minimum bet is 3 TON. Please add more balance.";
+    return;
+  }
+
+  if (bet > balance) {
+    gameStatus.textContent = "Insufficient balance.";
+    return;
+  }
+
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
+
+  multiplier = 1;
+  crashed = false;
+  gameRunning = true;
+  crashPoint = getRandomCrashPoint();
+
+  balance -= bet;
+  updateBalance();
+
+  gameStatus.textContent = "Game started! Good luck!";
+  startButton.disabled = true;
+  betInput.disabled = true;
+  cashoutButton.disabled = false;
+  multiplierDisplay.classList.remove("crashed");
+
+  scale = 1;
+  pulseDirection = 1;
+
+  animate();
+}
+
+function animate() {
+  if (!gameRunning) return;
+
+  multiplier *= 1.007;
+
+  scale += pulseDirection * 0.007;
+  if (scale >= 1.1) pulseDirection = -1;
+  if (scale <= 1) pulseDirection = 1;
+
+  if (multiplier >= crashPoint) {
+    crashed = true;
+    gameRunning = false;
+    multiplier = crashPoint;
+
+    multiplierDisplay.classList.add("crashed");
+    multiplierDisplay.style.transform = "scale(1)";
+
+    gameStatus.textContent = `Crashed at ${multiplier.toFixed(2)}x! You lost your bet.`;
+    playCrashSound();
+
+    cashoutButton.disabled = true;
+    startButton.disabled = false;
+    betInput.disabled = false;
+    multiplierDisplay.textContent = multiplier.toFixed(2) + "x";
+    draw();
+    return;
+  }
+
+  multiplierDisplay.textContent = multiplier.toFixed(2) + "x";
+  multiplierDisplay.style.transform = `scale(${scale.toFixed(2)})`;
+
+  draw();
+
+  animationId = requestAnimationFrame(animate);
+}
+
+function cashOut() {
+  if (!gameRunning || crashed) return;
+
+  gameRunning = false;
+  cancelAnimationFrame(animationId);
+
+  const winnings = bet * multiplier;
+  balance += winnings;
+
+  updateBalance();
+
+  gameStatus.textContent = `You cashed out at ${multiplier.toFixed(2)}x! Winnings: ${winnings.toFixed(2)} TON`;
+  playCashoutSound();
+
+  cashoutButton.disabled = true;
+  startButton.disabled = false;
+  betInput.disabled = false;
+
+  multiplierDisplay.classList.remove("crashed");
+  multiplierDisplay.style.transform = "scale(1)";
+}
+
+function updateBalance() {
+  balanceDisplay.textContent = `Balance: ${balance.toFixed(2)} TON`;
+}
+
+startButton.addEventListener("click", startGame);
+cashoutButton.addEventListener("click", cashOut);
+
+updateBalance();
+multiplierDisplay.textContent = "1.00x";
+draw();
