@@ -1,87 +1,92 @@
-/* Minimal styling */
 body {
-  background: #111;
+  background-color: #121212;
   color: #eee;
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  padding: 20px;
+  height: 100vh;
   margin: 0;
 }
-#game-container {
-  max-width: 600px;
-  width: 100%;
+
+.container {
   background: #222;
-  padding: 20px;
-  border-radius: 10px;
-  box-sizing: border-box;
+  padding: 30px 35px;
+  border-radius: 12px;
+  width: 320px;
+  text-align: center;
+  box-shadow: 0 0 20px #0ff;
 }
-#game-canvas {
-  width: 100%;
-  height: 250px;
-  background: #000;
-  border: 2px solid #0f0;
-  border-radius: 8px;
+
+h1 {
+  margin-bottom: 20px;
+  color: #0ff;
+  text-shadow: 0 0 8px #0ff;
+}
+
+.balance-container {
+  font-size: 1.3rem;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.bet-container {
   margin-bottom: 20px;
 }
-#multiplier {
-  font-size: 3em;
-  font-weight: bold;
-  color: #0f0;
-  text-align: center;
-  margin-bottom: 10px;
-  user-select: none;
-  transform-origin: center;
-  transition: color 0.3s ease;
-}
-#multiplier.crashed {
-  color: red;
-}
-#balance {
-  font-size: 1.2em;
-  margin-bottom: 15px;
-  text-align: center;
-}
-#game-status {
-  font-size: 1em;
-  color: #ccc;
-  text-align: center;
-  margin-bottom: 20px;
-  min-height: 1.5em;
-}
-#bet-input {
-  width: 100%;
-  padding: 10px;
-  font-size: 1.2em;
+
+#betInput {
+  width: 150px;
+  padding: 8px 12px;
+  font-size: 1rem;
   border-radius: 6px;
-  border: 2px solid #0f0;
-  background: #000;
-  color: #0f0;
-  box-sizing: border-box;
-  margin-bottom: 10px;
-}
-#start-button,
-#cashout-button {
-  width: 100%;
-  padding: 15px;
-  font-size: 1.2em;
-  background: #0f0;
-  color: #000;
   border: none;
-  border-radius: 8px;
+  margin-left: 10px;
+  outline: none;
+}
+
+#startBtn {
+  margin-left: 12px;
+  padding: 8px 20px;
+  background-color: #0ff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 700;
+  color: #222;
   cursor: pointer;
-  font-weight: bold;
-  margin-bottom: 15px;
-  transition: background 0.3s ease;
+  transition: background-color 0.3s ease;
 }
-#start-button:hover:not(:disabled),
-#cashout-button:hover:not(:disabled) {
-  background: #0c0;
+
+#startBtn:hover:not(:disabled) {
+  background-color: #08c;
+  color: #fff;
 }
-#start-button:disabled,
-#cashout-button:disabled {
-  background: #555;
+
+#startBtn:disabled {
+  background-color: #444;
   cursor: not-allowed;
-  color: #999;
+  color: #888;
+}
+
+.multiplier-container {
+  font-size: 4rem;
+  font-weight: 900;
+  margin: 30px 0 20px 0;
+  color: #0ff;
+  text-shadow:
+    0 0 15px #0ff,
+    0 0 30px #0ff,
+    0 0 45px #0ff;
+  transition: color 0.4s ease;
+}
+
+.message {
+  height: 30px;
+  font-weight: 600;
+  font-size: 1.3rem;
+}
+.message.error {
+  color: #f33;
+}
+.message.success {
+  color: #0f0;
 }
