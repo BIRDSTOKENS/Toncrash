@@ -1,84 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TonCrash - Crypto Crash Game</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-    <link href="style.css" rel="stylesheet" type="text/css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TON Crash Game</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div class="game-container">
-        <!-- Header -->
-        <header class="game-header">
-            <h1 class="logo">🚀 TonCrash</h1>
-            <div class="sound-toggle">
-                <button id="sound-toggle">🔊</button>
-            </div>
-        </header>
+  <div class="container">
+    <header>
+      <h1>TON Crash Game</h1>
+      <div class="balance-section">
+        <span id="balance">Balance: 100 TON</span>
+        <button id="sound-toggle">🔊</button>
+      </div>
+    </header>
 
-        <!-- Main Game Area -->
-        <div class="main-game">
-            <!-- Multiplier Display -->
-            <div class="multiplier-section">
-                <div id="multiplier" class="multiplier">1.00x</div>
-                <div class="game-status" id="game-status">Waiting for next round...</div>
-            </div>
+    <main>
+      <div class="game-display">
+        <canvas id="game-canvas" width="800" height="400"></canvas>
+        <div id="multiplier">1.00x</div>
+        <div id="game-status">Waiting for next round...</div>
+      </div>
 
-            <!-- Game Chart Area -->
-            <div class="chart-area">
-                <canvas id="game-canvas" width="400" height="200"></canvas>
-            </div>
-        </div>
+      <div class="betting-section">
+        <button class="btn btn-primary bet-btn" data-amount="10" disabled>Bet 10 TON</button>
+        <button class="btn btn-primary bet-btn" data-amount="20" disabled>Bet 20 TON</button>
+        <button class="btn btn-primary bet-btn" data-amount="300" disabled>Bet 300 TON</button>
+        <button id="cashout-button" class="btn btn-success" disabled>Cash Out</button>
+      </div>
 
-        <!-- Game Controls -->
-        <div class="game-controls">
-            <div class="balance-section">
-                <div id="balance" class="balance">Balance: 0 TON</div>
-            </div>
+      <div class="wallet-section">
+        <span id="wallet-address">EQC2s...demoWalletAddress</span>
+        <button id="copy-wallet">📋 Copy Wallet</button>
+      </div>
 
-            <div class="betting-section">
-                <button id="bet-button" class="btn btn-primary" disabled>Place Bet (0.1 TON)</button>
-                <button id="cashout-button" class="btn btn-success" disabled>Cash Out</button>
-            </div>
-        </div>
+      <div class="withdraw-section">
+        <input type="text" id="withdraw-input" placeholder="Enter your TON wallet address" />
+        <button id="withdraw-button">Withdraw</button>
+      </div>
 
-        <!-- Side Panel -->
-        <div class="side-panel">
-            <!-- Deposit Section -->
-            <div class="panel-section">
-                <h3>💰 Deposit TON</h3>
-                <div class="wallet-address">
-                    <code id="wallet-address">UQBIGwQMODuCtE45jOG7sfSaTadEboowp5Pk8SRyz-bVbz57</code>
-                    <button id="copy-wallet" class="btn btn-secondary">📋 Copy Wallet</button>
-                </div>
-            </div>
+      <div class="history-section">
+        <h2>Crash History</h2>
+        <div id="crash-history" class="crash-history"></div>
+      </div>
 
-            <!-- Withdraw Section -->
-            <div class="panel-section">
-                <h3>💸 Withdraw TON</h3>
-                <input type="text" id="withdraw-input" placeholder="Enter your TON wallet" class="input-field">
-                <button id="withdraw-button" class="btn btn-secondary" disabled>Withdraw TON</button>
-            </div>
+      <div class="users-section">
+        <h2>Online Players</h2>
+        <div id="user-list" class="user-list"></div>
+      </div>
+    </main>
 
-            <!-- Online Users -->
-            <div class="panel-section">
-                <h3>👥 Online Users (5701+)</h3>
-                <div id="user-list" class="user-list">
-                    <!-- Users will be populated by JavaScript -->
-                </div>
-            </div>
-        </div>
+    <footer>
+      <p>&copy; 2025 TON Crash Game. Demo only.</p>
+    </footer>
+  </div>
 
-        <!-- Recent Crashes -->
-        <div class="recent-crashes">
-            <h4>Recent Crashes:</h4>
-            <div id="crash-history" class="crash-history">
-                <!-- Crash history will be populated by JavaScript -->
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
