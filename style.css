@@ -1,188 +1,87 @@
+/* Minimal styling */
 body {
-    margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-    background: #111;
-    color: #eee;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
+  background: #111;
+  color: #eee;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  margin: 0;
 }
-
-h1 {
-    color: #0f0;
-    margin-bottom: 10px;
-}
-
 #game-container {
-    background: #222;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
-    max-width: 1000px;
-    width: 100%;
-    box-sizing: border-box;
+  max-width: 600px;
+  width: 100%;
+  background: #222;
+  padding: 20px;
+  border-radius: 10px;
+  box-sizing: border-box;
 }
-
 #game-canvas {
-    width: 100%;
-    height: 300px;
-    background: #000;
-    border: 2px solid #0f0;
-    margin-bottom: 20px;
-    border-radius: 8px;
+  width: 100%;
+  height: 250px;
+  background: #000;
+  border: 2px solid #0f0;
+  border-radius: 8px;
+  margin-bottom: 20px;
 }
-
 #multiplier {
-    font-size: 2.5em;
-    font-weight: bold;
-    color: #0f0;
-    text-align: center;
-    margin-bottom: 10px;
-    transition: color 0.3s ease;
+  font-size: 3em;
+  font-weight: bold;
+  color: #0f0;
+  text-align: center;
+  margin-bottom: 10px;
+  user-select: none;
+  transform-origin: center;
+  transition: color 0.3s ease;
 }
-
 #multiplier.crashed {
-    color: red;
+  color: red;
 }
-
 #balance {
-    font-size: 1.2em;
-    margin-bottom: 10px;
-    color: #ccc;
+  font-size: 1.2em;
+  margin-bottom: 15px;
+  text-align: center;
 }
-
 #game-status {
-    font-size: 1em;
-    margin-bottom: 15px;
-    color: #aaa;
+  font-size: 1em;
+  color: #ccc;
+  text-align: center;
+  margin-bottom: 20px;
+  min-height: 1.5em;
 }
-
-.button-row {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
+#bet-input {
+  width: 100%;
+  padding: 10px;
+  font-size: 1.2em;
+  border-radius: 6px;
+  border: 2px solid #0f0;
+  background: #000;
+  color: #0f0;
+  box-sizing: border-box;
+  margin-bottom: 10px;
 }
-
-.bet-btn,
-#cashout-button,
-#sound-toggle,
-#copy-wallet,
-#withdraw-button {
-    background: #0f0;
-    border: none;
-    color: #000;
-    padding: 10px 15px;
-    font-size: 1em;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: 0.2s ease;
+#start-button,
+#cashout-button {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.2em;
+  background: #0f0;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-bottom: 15px;
+  transition: background 0.3s ease;
 }
-
-.bet-btn:hover,
-#cashout-button:hover,
-#sound-toggle:hover,
-#copy-wallet:hover,
-#withdraw-button:hover {
-    background: #0c0;
+#start-button:hover:not(:disabled),
+#cashout-button:hover:not(:disabled) {
+  background: #0c0;
 }
-
-.bet-btn:disabled,
+#start-button:disabled,
 #cashout-button:disabled {
-    background: #555;
-    cursor: not-allowed;
-    color: #999;
-}
-
-#sound-toggle {
-    background: transparent;
-    color: #0f0;
-    font-size: 1.5em;
-}
-
-.section {
-    margin-top: 30px;
-    background: #1a1a1a;
-    padding: 15px;
-    border-radius: 8px;
-}
-
-.section h2 {
-    font-size: 1.2em;
-    color: #0f0;
-    margin-bottom: 10px;
-}
-
-#user-list {
-    max-height: 150px;
-    overflow-y: auto;
-    font-size: 0.95em;
-}
-
-.user-item {
-    padding: 3px 0;
-    border-bottom: 1px solid #333;
-    color: #ccc;
-}
-
-#crash-history {
-    display: flex;
-    gap: 5px;
-    flex-wrap: wrap;
-    font-size: 0.95em;
-}
-
-.crash-item {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-weight: bold;
-}
-
-.crash-item.low {
-    background: #222;
-    color: #f33;
-}
-
-.crash-item.medium {
-    background: #333;
-    color: #ff0;
-}
-
-.crash-item.high {
-    background: #1a1;
-    color: #fff;
-}
-
-#withdraw-section input {
-    width: 80%;
-    padding: 8px;
-    margin-right: 10px;
-    border: 1px solid #444;
-    background: #000;
-    color: #eee;
-    border-radius: 4px;
-}
-
-#wallet-address {
-    font-family: monospace;
-    background: #000;
-    padding: 5px 10px;
-    border-radius: 5px;
-    display: inline-block;
-    margin: 10px 0;
-    color: #0f0;
-}
-
-@media (max-width: 600px) {
-    .button-row {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    #withdraw-section input {
-        width: 100%;
-        margin-bottom: 10px;
-    }
+  background: #555;
+  cursor: not-allowed;
+  color: #999;
 }
